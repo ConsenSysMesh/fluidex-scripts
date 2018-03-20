@@ -1,0 +1,72 @@
+apply plugin: 'maven'
+
+project.ext {
+	DEV_ENV = 'DEV'
+	PROD_ENV = 'PROD'
+	UNDEFINED = 'undefined'
+}
+
+ext {
+	if (project.hasProperty('fluidexNexusConnectionString')) {
+		(nexusUsername, nexusPassword, nexusUrl) = "${fluidexNexusConnectionString}".tokenize( ';' )
+	} else {
+		nexusUrl = project.hasProperty('fluidexNexusUrl') ? "${fluidexNexusUrl}" : UNDEFINED
+		nexusUsername = project.hasProperty('fluidexNexusUser') ? "${fluidexNexusUser}" : UNDEFINED
+		nexusPassword = project.hasProperty('fluidexNexusPass') ? "${fluidexNexusPass}" : UNDEFINED
+	}
+  
+	nexusRepository = project.hasProperty('nexusRepository') ? "${nexusRepository}" : UNDEFINED
+	groupId = project.hasProperty('group') ? "${group}" : UNDEFINED
+	releaseNumber = project.hasProperty('releaseNumber') ? "${releaseNumber}" : UNDEFINED
+	versionSuffix = project.hasProperty('versionSuffix') ? "${versionSuffix}" : UNDEFINED
+	env = project.hasProperty('environment') ? "${environment}" : UNDEFINED
+
+	if (env == PROD_ENV) {
+		versionSuffix = ''
+		nexusRepository = 'maven-releases'
+	} else if (env == DEV_ENV) {
+		versionSuffix = '-SNAPSHOT'
+		nexusRepository = 'maven-snapshots'
+	} else if (env == UNDEFINED) {
+		versionSuffix = '-LOCAL'
+		nexusRepository = UNDEFINED
+	} else {
+		throw new RuntimeException("Invalid build environment [${env}]!")
+	}
+
+}
+
+version = "${releaseNumber}${versionSuffix}"
+
+repositories {
+	mavenLocal()
+	maven {
+		url "${nexusUrl}/repository/maven-public"
+		credentials {
+			username "${nexusUsername}"
+			password "${nexusPassword}"
+		}
+	}
+}
+
+// Publish Config
+
+uploadArchives {
+	repositories.mavenDeployer {
+		repository(url: "${nexusUrl}/repository/${nexusRepository}") {
+			authentication(userName: "${nexusUsername}", password: "${nexusPassword}")
+		}
+		pom.groupId = "${groupId}"
+	}
+}
+
+// Auxiliary Tasks
+
+task showFluidexCredentials() {
+	doLast {
+		println ""
+		println "host: ${nexusUrl}"
+		println "user: ${nexusUsername}"
+		println "password: ${nexusPassword}"
+	}
+}
