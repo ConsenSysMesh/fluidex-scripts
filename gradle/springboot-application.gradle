@@ -18,8 +18,6 @@ apply plugin: org.springframework.boot.gradle.plugin.SpringBootPlugin
 task wrapper(type: Wrapper) { gradleVersion = '3.5' }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
