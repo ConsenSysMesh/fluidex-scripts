@@ -104,3 +104,22 @@ task showFluidexCredentials() {
 		println "password: ${nexusPassword}"
 	}
 }
+
+task validateReleaseNumber(type: Exec) {
+	def cmdStdOut = new ByteArrayOutputStream()
+	workingDir "${project.rootDir}"
+	commandLine 'git' , 'tag'
+	standardOutput = cmdStdOut
+	doLast {
+		if (env == DEV_ENV) {
+			def tags = cmdStdOut.toString().split("\n")
+			tags.each {
+				if (releaseNumber == it) {
+					throw new GradleException("A tag with this version already exists [${releaseNumber}], please increase the releaseNumber on the gradle.properties")
+				}
+			}
+		}
+	}
+}
+
+compileJava.dependsOn validateReleaseNumber
