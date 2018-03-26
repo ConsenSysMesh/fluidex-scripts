@@ -1,5 +1,7 @@
 apply plugin: 'maven'
 apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse-wtp'
 
 project.ext {
 	DEV_ENV = 'DEV'
@@ -50,6 +52,22 @@ repositories {
 	}
 }
 
+// IDE Config
+
+eclipse {
+	classpath {
+		downloadSources = true
+		downloadJavadoc = true
+	}
+}
+
+idea {
+	module {
+		downloadJavadoc = true
+		downloadSources = true
+	}
+}
+
 // Publish Config
 
 uploadArchives {
@@ -72,7 +90,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 }
 
 artifacts {
-  archives sourcesJar
+	archives sourcesJar
+	archives javadocJar
 }
 
 // Auxiliary Tasks
