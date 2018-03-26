@@ -106,11 +106,20 @@ task showFluidexCredentials() {
 }
 
 task validateReleaseNumber(type: Exec) {
+	ignoreExitValue true
 	def cmdStdOut = new ByteArrayOutputStream()
+	def cmdStdErr = new ByteArrayOutputStream()
 	workingDir "${project.rootDir}"
 	commandLine 'git' , 'tag'
 	standardOutput = cmdStdOut
+	errorOutput = cmdStdErr
 	doLast {
+
+		if (execResult.getExitValue() != 0) {
+			println "Something went wrong: \n\t${cmdStdErr.toString()}"
+			return
+  	}
+
 		if (env == DEV_ENV) {
 			def tags = cmdStdOut.toString().split("\n")
 			tags.each {
@@ -119,6 +128,7 @@ task validateReleaseNumber(type: Exec) {
 				}
 			}
 		}
+
 	}
 }
 
