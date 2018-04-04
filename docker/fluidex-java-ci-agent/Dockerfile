@@ -6,5 +6,5 @@ RUN apt-get update && \
   curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
   apt-get install -y nodejs && \
   npm i -g ganache-cli@6.0.3 && \
-  npm i -g truffle@4.1.3
+  npm i -g truffle@4.1.5
 
