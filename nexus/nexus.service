@@ -1,0 +1,19 @@
+[Unit]
+Description=nexus service
+After=docker.service
+Requires=docker.service
+  
+[Service]
+Type=forking
+LimitNOFILE=65536
+TimeoutStartSec=0
+ExecStartPre=-/usr/bin/docker kill nexus
+ExecStartPre=-/usr/bin/docker rm nexus
+ExecStartPre=/usr/bin/docker pull sonatype/nexus3
+ExecStart=/usr/bin/docker run -p 80:8081 --name nexus -v /home/fluidex/nexus-data:/nexus-data sonatype/nexus3
+ExecStop=/usr/bin/docker stop nexus
+User=fluidex
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
