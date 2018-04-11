@@ -18,6 +18,26 @@ apply plugin: org.springframework.boot.gradle.plugin.SpringBootPlugin
 task wrapper(type: Wrapper) { gradleVersion = '3.5' }
 
 apply plugin: 'java'
+apply plugin: 'application'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
+
+task buildDockerfile {
+    doLast {
+        def DOCKER_CONTENT = 
+            """FROM openjdk:8-jre
+            |
+            |COPY "build/distributions/${project.name}-${releaseNumber}${versionSuffix}.zip" /tmp
+            |
+            |RUN unzip /tmp/${project.name}-${releaseNumber}${versionSuffix}.zip -d /home
+            |
+            |ENTRYPOINT [ "/home/${project.name}-${releaseNumber}${versionSuffix}/bin/${project.name}" ]
+            |"""
+            .stripMargin()
+
+        new File("Dockerfile").write DOCKER_CONTENT
+    }
+}
+
+build.finalizedBy buildDockerfile
