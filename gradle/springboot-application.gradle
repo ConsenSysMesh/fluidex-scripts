@@ -11,8 +11,6 @@ buildscript {
     }
 }
 
-apply plugin: 'java'
-apply plugin: 'application'
 apply plugin: org.springframework.boot.gradle.plugin.SpringBootPlugin
 apply plugin: io.spring.gradle.dependencymanagement.DependencyManagementPlugin
 
@@ -20,6 +18,9 @@ task wrapper(type: Wrapper) { gradleVersion = '4.6' }
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
+
+javadoc { options.addStringOption("sourcepath", "") }
+javadoc.failOnError = false
 
 task buildDockerfile {
     doLast {
