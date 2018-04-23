@@ -107,6 +107,18 @@ task showFluidexCredentials() {
 	}
 }
 
+task getProjectName() {
+  doLast {
+    println project.name
+  }
+}
+
+task getProjectVersion() {
+  doLast {
+    println project.releaseNumber
+  }
+}
+
 task validateReleaseNumber(type: Exec) {
 	ignoreExitValue true
 	def cmdStdOut = new ByteArrayOutputStream()
