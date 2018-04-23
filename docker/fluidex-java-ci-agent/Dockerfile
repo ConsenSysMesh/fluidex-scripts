@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 
 RUN apt-get update && \
-  apt-get install -y git build-essential curl
+  apt-get install -y git build-essential curl apt-transport-https ca-certificates
   
 # install node & npm
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
@@ -22,7 +22,16 @@ RUN apt-get install -y software-properties-common && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
 
+# install parity
 COPY get-parity.sh /tmp
-
 RUN /tmp/get-parity.sh && \
   rm /tmp/*.sh
+
+# install docker
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
+  apt-key fingerprint 0EBFCD88 && \
+  add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+RUN apt-get update && apt-get install -y docker-ce
