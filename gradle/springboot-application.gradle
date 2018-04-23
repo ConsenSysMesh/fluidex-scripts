@@ -24,14 +24,13 @@ javadoc.failOnError = false
 
 task buildDockerfile {
     doLast {
+        def jarFile = "${project.name}-${releaseNumber}${versionSuffix}.jar"
         def DOCKER_CONTENT = 
             """FROM openjdk:8-jre
             |
-            |COPY "build/distributions/${project.name}-${releaseNumber}${versionSuffix}.zip" /tmp
+            |COPY "build/libs/${jarFile}" /home
             |
-            |RUN unzip /tmp/${project.name}-${releaseNumber}${versionSuffix}.zip -d /home
-            |
-            |ENTRYPOINT [ "/home/${project.name}-${releaseNumber}${versionSuffix}/bin/${project.name}" ]
+            |ENTRYPOINT [ "java" , "-Dspring.profiles.active=prod" , "-jar" , "/home/${jarFile}" ]
             |"""
             .stripMargin()
 
@@ -39,4 +38,4 @@ task buildDockerfile {
     }
 }
 
-build.finalizedBy buildDockerfile
+bootJar.finalizedBy buildDockerfile
