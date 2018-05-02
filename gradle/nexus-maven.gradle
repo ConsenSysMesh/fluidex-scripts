@@ -70,6 +70,19 @@ idea {
 	}
 }
 
+// Dependency Resolution
+
+configurations.all {
+    resolutionStrategy.dependencySubstitution.all { dependency ->
+        if (dependency.requested.group == 'com.fluidex' && 
+            !dependency.requested.version.endsWith('SNAPSHOT') &&
+            env == DEV_ENV) {
+            def module = "${dependency.requested.group}:${dependency.requested.module}:${dependency.requested.version}"
+            dependency.useTarget "${module}-SNAPSHOT"
+        }
+    }
+}
+
 // Publish Config
 
 uploadArchives {
