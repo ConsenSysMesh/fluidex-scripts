@@ -28,9 +28,9 @@ task buildDockerfile {
         def DOCKER_CONTENT = 
             """FROM openjdk:8-jre
             |
-            |COPY "build/libs/${jarFile}" /home
+            |COPY build/libs/${jarFile} /home/application.jar
             |
-            |ENTRYPOINT [ "java" , "-Dspring.profiles.active=prod" , "-jar" , "/home/${jarFile}" ]
+            |ENTRYPOINT [ "java" , "-jar" , "/home/application.jar" ]
             |"""
             .stripMargin()
 
