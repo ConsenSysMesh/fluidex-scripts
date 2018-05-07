@@ -34,7 +34,7 @@ task buildDockerfile {
             |"""
             .stripMargin()
 
-        new File("Dockerfile").write DOCKER_CONTENT
+        new File( "${project.projectDir}" , "Dockerfile" ).write DOCKER_CONTENT
     }
 }
 
