@@ -1,0 +1,208 @@
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse-wtp'
+
+project.ext {
+	DEV_ENV = 'DEV'
+	PROD_ENV = 'PROD'
+	UNDEFINED = 'undefined'
+}
+
+ext {
+	if (project.hasProperty('fluidexNexusConnectionString')) {
+		(nexusUsername, nexusPassword, nexusUrl) = "${fluidexNexusConnectionString}".tokenize( ';' )
+	} else {
+		nexusUrl = project.hasProperty('fluidexNexusUrl') ? "${fluidexNexusUrl}" : UNDEFINED
+		nexusUsername = project.hasProperty('fluidexNexusUser') ? "${fluidexNexusUser}" : UNDEFINED
+		nexusPassword = project.hasProperty('fluidexNexusPass') ? "${fluidexNexusPass}" : UNDEFINED
+	}
+  
+	nexusRepository = project.hasProperty('nexusRepository') ? "${nexusRepository}" : UNDEFINED
+	groupId = project.hasProperty('group') ? "${group}" : UNDEFINED
+	releaseNumber = project.hasProperty('releaseNumber') ? "${releaseNumber}" : UNDEFINED
+	versionSuffix = project.hasProperty('versionSuffix') ? "${versionSuffix}" : UNDEFINED
+	env = project.hasProperty('environment') ? "${environment}" : UNDEFINED
+
+	if (env == PROD_ENV) {
+		versionSuffix = ''
+		nexusRepository = 'maven-releases'
+	} else if (env == DEV_ENV) {
+		versionSuffix = '-SNAPSHOT'
+		nexusRepository = 'maven-snapshots'
+	} else if (env == UNDEFINED) {
+		versionSuffix = '-LOCAL'
+		nexusRepository = UNDEFINED
+	} else {
+		throw new RuntimeException("Invalid build environment [${env}]!")
+	}
+
+}
+
+version = "${releaseNumber}${versionSuffix}"
+
+// ==========================================================
+// Spring boot application 
+
+repositories {
+  mavenCentral()
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.1.RELEASE")
+    }
+}
+
+apply plugin: org.springframework.boot.gradle.plugin.SpringBootPlugin
+apply plugin: io.spring.gradle.dependencymanagement.DependencyManagementPlugin
+
+task wrapper(type: Wrapper) { gradleVersion = '4.6' }
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+javadoc { options.addStringOption("sourcepath", "") }
+javadoc.failOnError = false
+
+task buildDockerfile {
+    doLast {
+        def jarFile = "${project.name}-${releaseNumber}${versionSuffix}.jar"
+        def DOCKER_CONTENT = 
+            """FROM openjdk:8-jre
+            |
+            |COPY build/libs/${jarFile} /home/application.jar
+            |
+            |ENTRYPOINT [ "java" , "-jar" , "/home/application.jar" ]
+            |"""
+            .stripMargin()
+
+        new File( "${project.projectDir}" , "Dockerfile" ).write DOCKER_CONTENT
+    }
+}
+
+bootJar.finalizedBy buildDockerfile
+
+// ==========================================================
+
+repositories {
+	mavenLocal()
+	maven {
+		url "${nexusUrl}/repository/maven-public"
+		credentials {
+			username "${nexusUsername}"
+			password "${nexusPassword}"
+		}
+	}
+}
+
+[compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
+
+// IDE Config
+
+eclipse {
+	classpath {
+		downloadSources = true
+		downloadJavadoc = true
+	}
+}
+
+idea {
+	module {
+		downloadJavadoc = true
+		downloadSources = true
+	}
+}
+
+// Dependency Resolution
+
+configurations.all {
+    resolutionStrategy.dependencySubstitution.all { dependency ->
+        if (dependency.requested.group == 'com.fluidex' && 
+            env == DEV_ENV) {
+            def module = "${dependency.requested.group}:${dependency.requested.module}:${dependency.requested.version}-SNAPSHOT"
+            dependency.useTarget "${module}"
+        }
+    }
+}
+
+// Publish Config
+
+uploadArchives {
+	repositories.mavenDeployer {
+		repository(url: "${nexusUrl}/repository/${nexusRepository}") {
+			authentication(userName: "${nexusUsername}", password: "${nexusPassword}")
+		}
+		pom.groupId = "${groupId}"
+	}
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives sourcesJar
+	archives javadocJar
+}
+
+// Auxiliary Tasks
+
+task showFluidexCredentials() {
+	doLast {
+		println ""
+		println "host: ${nexusUrl}"
+		println "user: ${nexusUsername}"
+		println "password: ${nexusPassword}"
+	}
+}
+
+task getProjectName() {
+  doLast {
+    println project.name
+  }
+}
+
+task getProjectVersion() {
+  doLast {
+    println project.releaseNumber
+  }
+}
+
+task validateReleaseNumber(type: Exec) {
+	ignoreExitValue true
+	def cmdStdOut = new ByteArrayOutputStream()
+	def cmdStdErr = new ByteArrayOutputStream()
+	workingDir "${project.rootDir}"
+	commandLine 'git' , 'tag'
+	standardOutput = cmdStdOut
+	errorOutput = cmdStdErr
+	doLast {
+
+		if (execResult.getExitValue() != 0) {
+			println "Something went wrong: \n\t${cmdStdErr.toString()}"
+			return
+  	}
+
+		if (env == DEV_ENV) {
+			def tags = cmdStdOut.toString().split("\n")
+			tags.each {
+				if (releaseNumber == it) {
+					throw new GradleException("A tag with this version already exists [${releaseNumber}], please increase the releaseNumber on the gradle.properties")
+				}
+			}
+		}
+
+	}
+}
+
+compileJava.dependsOn validateReleaseNumber
