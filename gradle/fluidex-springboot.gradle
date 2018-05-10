@@ -122,7 +122,7 @@ idea {
 configurations.all {
     resolutionStrategy.dependencySubstitution.all { dependency ->
         if (dependency.requested.group == 'com.fluidex' && 
-            env == DEV_ENV) {
+            env != PROD_ENV) {
             def module = "${dependency.requested.group}:${dependency.requested.module}:${dependency.requested.version}-SNAPSHOT"
             dependency.useTarget "${module}"
         }
