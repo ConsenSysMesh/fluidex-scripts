@@ -15,11 +15,6 @@ if [ -z "$KUBERNETES_CERT" ]; then
     exit 1
 fi
 
-if [ -z "$KUBERNETES_TEMPLATE" ]; then
-    echo "Missing env variable KUBERNETES_TEMPLATE"
-    exit 1
-fi
-
 mkdir -p /root/.kube
 
 KUBERNETES_CERT_PATH=/root/.kube/ca.crt
