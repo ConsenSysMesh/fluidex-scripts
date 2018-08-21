@@ -122,7 +122,8 @@ idea {
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     resolutionStrategy.dependencySubstitution.all { dependency ->
-        if (dependency.requested.group == 'com.fluidex' && 
+        if (dependency.requested instanceof ModuleComponentSelector && 
+	    dependency.requested.group == 'com.fluidex' && 
             !dependency.requested.version.endsWith('SNAPSHOT') &&
             env == DEV_ENV) {
             def module = "${dependency.requested.group}:${dependency.requested.module}:${dependency.requested.version}"
