@@ -125,7 +125,7 @@ configurations.all {
         if (dependency.requested instanceof ModuleComponentSelector && 
 	    dependency.requested.group == 'com.fluidex' && 
             !dependency.requested.version.endsWith('SNAPSHOT') &&
-            env == DEV_ENV) {
+            env != PROD_ENV) {
             def module = "${dependency.requested.group}:${dependency.requested.module}:${dependency.requested.version}"
             dependency.useTarget "${module}-SNAPSHOT"
         }
