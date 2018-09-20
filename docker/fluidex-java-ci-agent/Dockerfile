@@ -21,10 +21,6 @@ RUN apt-get install -y software-properties-common && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
 
-# install parity
-COPY get-parity.sh /tmp
-RUN /tmp/get-parity.sh && \
-  rm /tmp/*.sh
 
 # install docker
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
@@ -41,5 +37,15 @@ RUN apt-get update -y && apt-get install -y apache2-utils
 # install nano
 RUN apt-get update -y && apt-get install -y nano
 
+# install bitcoind
+RUN apt-add-repository ppa:bitcoin/bitcoin
+RUN apt update
+RUN apt-get install -y bitcoind
+
 # clean
 RUN apt-get clean
+
+# install parity, from https://raw.githubusercontent.com/paritytech/scripts/master/get-parity.sh
+COPY get-parity.sh /tmp
+RUN /tmp/get-parity.sh && \
+  rm /tmp/*.sh
